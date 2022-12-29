@@ -108,6 +108,30 @@ productRouter.post("/:productid/reviews", async (req, res, next) => {
   }
 });
 
+productRouter.put("/:productid/reviews/:reviewid", async (req, res, next) => {
+  try {
+    const reviews = await getReviews();
+    const index = reviews.findIndex(
+      (review) => review.id === req.params.reviewid
+    );
+    if (index !== -1) {
+      const oldReview = reviews[index];
+      const updatedReview = {
+        ...oldReview,
+        ...req.body,
+        updatedAt: new Date(),
+      };
+      reviews[index] = updatedReview;
+      await writeReviews(reviews);
+      res.send(updatedReview);
+    } else {
+      res.status(404).send(`Review with id ${req.params.reviewid} not found.`);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 productRouter.get("/:productid/reviews/", async (req, res, next) => {
   try {
     const reviews = await getReviews();
@@ -137,5 +161,25 @@ productRouter.get("/:productid/reviews/:reviewid", async (req, res, next) => {
     next(err);
   }
 });
+
+productRouter.delete(
+  "/:productid/reviews/:reviewid",
+  async (req, res, next) => {
+    try {
+      const reviews = await getReviews();
+      const remainingReviews = reviews.filter(
+        (review) => review.id !== req.params.reviewid
+      );
+      if (reviews.length !== remainingReviews.length) {
+        await writeReviews(remainingReviews);
+        res.status(204).send();
+      } else {
+        next(res.status(404).send("Review not found."));
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default productRouter;
