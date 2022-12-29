@@ -2,9 +2,9 @@ import express from "express";
 import uniqid from "uniqid";
 import { getProducts, writeProducts, saveProdImg } from "../lib/tools.js";
 import { checkProdSchema, triggerBadRequest } from "./validator.js";
-import { checkReviewSchema } from "../reviews/validator.js";
-import { triggerBadCommentRequest } from "../reviews/validator.js";
+import { extname } from "path";
 import { getReviews, writeReviews } from "../lib/tools.js";
+import multer from "multer";
 
 const productRouter = express.Router();
 
@@ -175,6 +175,37 @@ productRouter.delete(
         res.status(204).send();
       } else {
         next(res.status(404).send("Review not found."));
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+productRouter.post(
+  "/:productid/upload",
+  multer().single("image"),
+  async (req, res, next) => {
+    try {
+      const fileExt = extname(req.file.originalname);
+      const fileName = req.params.productid + fileExt;
+      await saveProdImg(fileName, req.file.buffer);
+      const url = `http://localhost:3001/images/products/${fileName}`;
+      const products = await getProducts();
+
+      const index = products.findIndex(
+        (prod) => prod.id === req.params.productid
+      );
+      if (index !== -1) {
+        const oldProd = products[index];
+        const updatedProd = {
+          ...oldProd,
+          imageUrl: url,
+          updatedAt: new Date(),
+        };
+        products[index] = updatedProd;
+        await writeProducts(products);
+        res.send("File uploaded successfully.");
       }
     } catch (err) {
       next(err);

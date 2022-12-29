@@ -10,7 +10,7 @@ import {
   unauthorizedHandler,
 } from "./errorHandler.js";
 
-export const publicFolderPath = join(process.cwd(), "./public");
+const publicFolderPath = join(process.cwd(), "./public");
 const server = express();
 
 const port = 3001;
