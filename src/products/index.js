@@ -5,6 +5,11 @@ import { checkProdSchema, triggerBadRequest } from "./validator.js";
 import { extname } from "path";
 import { getReviews, writeReviews } from "../lib/tools.js";
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const productRouter = express.Router();
 
@@ -182,15 +187,25 @@ productRouter.delete(
   }
 );
 
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "soloproj/product_imgs",
+    },
+  }),
+}).single("imageUrl");
+
 productRouter.post(
   "/:productid/upload",
-  multer().single("image"),
+  cloudinaryUploader,
   async (req, res, next) => {
     try {
-      const fileExt = extname(req.file.originalname);
-      const fileName = req.params.productid + fileExt;
-      await saveProdImg(fileName, req.file.buffer);
-      const url = `http://localhost:3001/images/products/${fileName}`;
+      // const fileExt = extname(req.file.originalname);
+      // const fileName = req.params.productid + fileExt;
+      // await saveProdImg(fileName, req.file.buffer);
+      console.log(req.file);
+      const url = req.file.path;
       const products = await getProducts();
 
       const index = products.findIndex(

@@ -1,6 +1,7 @@
 import express from "express";
 import listEndpoints from "express-list-endpoints";
 import cors from "cors";
+import * as dotenv from "dotenv";
 import { join } from "path";
 import productRouter from "./products/index.js";
 import {
@@ -9,11 +10,24 @@ import {
   badRequestHandler,
   unauthorizedHandler,
 } from "./errorHandler.js";
-
+import createHttpError from "http-errors";
+dotenv.config();
 const publicFolderPath = join(process.cwd(), "./public");
 const server = express();
 
-const port = 3001;
+const port = process.env.PORT;
+
+const whitelist = [process.env.BE_DEV_URL];
+
+const corsOpts = {
+  origin: (origin, corsNext) => {
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      corsNext(null, true);
+    } else {
+      corsNext(createHttpError(400, `${origin} is not on Whitelist`));
+    }
+  },
+};
 
 server.use(express.static(publicFolderPath));
 server.use(express.json());
